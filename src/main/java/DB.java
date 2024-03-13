@@ -4,27 +4,23 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class DB {
-    private final String USERNAME = "root";
-    private final String PASSWORD = "password";
-    private final String DB_URL = "jdbc:mysql://localhost:3306/BankSystem";
+    private String query = "[QUERY] [TABLE]";
 
     private Connection connection;
     private Statement statement;
 
-    private String query = "[QUERY] [TABLE]";
-
-    public String getQuery() {
-        return query;
-    }
-
     public DB() {
         try {
-            this.connection = DriverManager.getConnection(DB_URL, USERNAME, PASSWORD);
+            this.connection = DataSource.getConnection();
             this.statement = connection.createStatement();
         } catch (
                 SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getQuery() {
+        return query;
     }
 
     public DB table(String table) {
@@ -100,6 +96,28 @@ public class DB {
         return this;
     }
 
+    public DB andWhere(String column, String value) {
+        this.andWhere(column, "=", value);
+        return this;
+    }
+
+    public DB andWhere(String column, String operator, String value) {
+        this.query += String.format(" AND %s %s %s", column, operator, value);
+
+        return this;
+    }
+
+    public DB orWhere(String column, String value) {
+        this.orWhere(column, "=", value);
+        return this;
+    }
+
+    public DB orWhere(String column, String operator, String value) {
+        this.query += String.format(" OR %s %s %s", column, operator, value);
+
+        return this;
+    }
+
     public DB delete() {
         this.query = this.query.replace("[QUERY]", "DELETE FROM");
 
@@ -107,13 +125,15 @@ public class DB {
     }
 
     public ResultSet get() {
+        ResultSet result = null;
         try {
-            ResultSet result = this.statement.executeQuery(this.getQuery());
-            return result;
+            result = this.statement.executeQuery(this.getQuery());
         } catch (
                 SQLException e) {
             throw new RuntimeException(e);
         }
+
+        return result;
     }
 
     public void execute() {

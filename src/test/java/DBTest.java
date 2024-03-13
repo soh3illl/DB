@@ -31,34 +31,42 @@ public class DBTest {
     @Test
     public void whenInsertIsGivenUnmatchableKeysAndValuesThenIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            db.insert(List.of("src_account", "amount", "dest_account"), List.of("123", "456"));
+            db.insert(
+                    List.of("src_account", "amount", "dest_account"),
+                    List.of("123", "456")
+            );
         });
     }
 
     @Test
-    @Disabled
     public void whenInsertAndExecuteIsCalledThenQueryShouldBeInsert() {
-        db.table("transactions");
-        db.insert(List.of("src_account", "amount", "dest_account"), List.of("123", "800", "456")).execute();
+        db
+                .table("transactions")
+                .insert(List.of("src_account", "amount", "dest_account"), List.of("123", "800", "456"))
+                .execute();
 
         assertEquals("INSERT INTO transactions(src_account, amount, dest_account) VALUES(123, 800, 456)", db.getQuery());
     }
 
     @Test
     public void whenSelectIsCalledThenQueryShouldBeSelect() {
-        db.table("transactions");
-        db.select();
+        db
+                .table("transactions")
+                .select();
 
         assertEquals("SELECT * FROM transactions", db.getQuery());
     }
 
     @Test
-    public void whenSelectAndExecuteCalledThenFetchData() {
-
+    public void whenSelectAndGetIsCalledThenFetchData() {
         Assertions.assertDoesNotThrow(() -> {
             db.table("transactions");
-            ResultSet res = db.select().get();
+            ResultSet res = db
+                    .select()
+                    .get();
+
             res.next();
+
             assertEquals(res.getString("src_account"), "123");
             assertEquals(res.getDouble("amount"), 800);
             assertEquals(res.getString("dest_account"), "456");
@@ -68,14 +76,20 @@ public class DBTest {
     @Test
     public void whenUpdateIsGivenUnmatchableKeysAndValuesThenIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class, () -> {
-            db.update(List.of("src_account", "amount", "dest_account"), List.of("123", "789"));
+            db.update(
+                    List.of("src_account", "amount", "dest_account"),
+                    List.of("123", "789")
+            );
         });
     }
 
     @Test
     public void whenUpdateAndWhereIsCalledThenUpdateAppropriateRecord() {
-        db.table("transactions");
-        db.update(List.of("src_account", "amount", "dest_account"), List.of("123", "800", "789")).where("id", "1").execute();
+        db
+                .table("transactions")
+                .update(List.of("src_account", "amount", "dest_account"), List.of("123", "800", "789"))
+                .where("id", "1")
+                .execute();
 
         assertEquals("UPDATE transactions SET src_account = 123, amount = 800, dest_account = 789 WHERE id = 1", db.getQuery());
     }
@@ -87,5 +101,27 @@ public class DBTest {
         });
     }
 
+    @Test
+    public void whenAddWhereCalledANewConditionIsAdded() {
+        db
+                .table("transactions")
+                .select()
+                .where("id", "1")
+                .andWhere("amount", "800");
 
+        Assertions.assertEquals("SELECT * FROM transactions WHERE id = 1 AND amount = 800", db.getQuery());
+    }
+
+    @Test
+    public void whenOrWhereCalledANewConditionIsAdded() {
+        {
+            db
+                    .table("transactions")
+                    .select()
+                    .where("id", "1")
+                    .orWhere("amount", "800");
+
+            Assertions.assertEquals("SELECT * FROM transactions WHERE id = 1 OR amount = 800", db.getQuery());
+        }
+    }
 }
